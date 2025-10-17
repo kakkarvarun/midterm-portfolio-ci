@@ -1,0 +1,34 @@
+Set-Content -Path .gitignore -Value @'
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build / dist
+dist/
+build/
+out/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Logs
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Env files
+.env
+.env.*
+
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Caches
+.cache/
+.parcel-cache/
+'@
