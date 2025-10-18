@@ -73,7 +73,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/midterm-portfolio-ci:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/midterm-portfolio-ci:main
             ${{ secrets.DOCKERHUB_USERNAME }}/midterm-portfolio-ci:${{ github.sha }}
 
 
