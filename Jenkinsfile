@@ -4,7 +4,7 @@ pipeline {
   tools { nodejs "node20" }  // Jenkins Tools: NodeJS 20.x LTS
 
   environment {
-    REGISTRY = "ghcr.io"
+    IMAGE = "ghcr.io/kakkarvarun/midterm-portfolio-ci"
   }
 
   stages {
@@ -14,7 +14,7 @@ pipeline {
 
     stage("Install") {
       steps {
-        // Single-quoted block avoids Groovy interpolating $ or $(...)
+        // Single-quoted shell block so $ / $(...) are not Groovy-interpolated
         sh '''
           echo "Node location: $(which node)"
           node -v
@@ -32,20 +32,19 @@ pipeline {
       steps { sh 'npm test' }  // Pipeline fails here if any test fails
     }
 
-    // Ensure the local ref for origin/main exists and is fresh
+    // Make sure we compare with the *latest* origin/main
     stage("Ensure origin/main ref") {
       steps {
         sh '''
           git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
           echo "HEAD:        $(git rev-parse HEAD)"
           echo "origin/main: $(git rev-parse origin/main)"
-          echo "Branch refs:"
           git branch -vv || true
         '''
       }
     }
 
-    // ---- Docker stages run ONLY when this commit == origin/main ----
+    // Only publish when the build's commit equals origin/main (Fix A)
     stage("Docker Login (GHCR)") {
       when {
         expression {
@@ -67,16 +66,11 @@ pipeline {
       }
       steps {
         script {
-          // Derive owner/repo from remote URL (lowercased)
-          def owner = sh(script: "git config --get remote.origin.url | sed -E 's#(git@|https://)github.com[:/]|.git##g' | cut -d/ -f1 | tr '[:upper:]' '[:lower:]'", returnStdout: true).trim()
-          def repo  = sh(script: "git config --get remote.origin.url | sed -E 's#.*/([^/]+)(\\\\.git)?#\\1#' | tr '[:upper:]' '[:lower:]'", returnStdout: true).trim()
-          def image = "${REGISTRY}/${owner}/${repo}"
-          def sha   = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-
+          def sha = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
           sh """
-            docker build -t ${image}:latest -t ${image}:${sha} .
-            docker push ${image}:latest
-            docker push ${image}:${sha}
+            docker build -t ${IMAGE}:latest -t ${IMAGE}:${sha} .
+            docker push ${IMAGE}:latest
+            docker push ${IMAGE}:${sha}
           """
         }
       }
