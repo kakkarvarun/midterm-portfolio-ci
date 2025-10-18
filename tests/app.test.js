@@ -5,7 +5,8 @@ const app = require("../src/app");
 describe("Portfolio app", () => {
   test("serves homepage (index.html) with status 200 and name", async () => {
     const res = await request(app).get("/");
-    expect(res.statusCode).toBe(200);
+    //expect(res.statusCode).toBe(200);
+    expect(res.statusCode).toBe(201); // WRONG ON PURPOSE for fail demo
     expect(res.text).toMatch(/Varun Kakkar/);
   });
 
