@@ -1,7 +1,7 @@
 
 pipeline {
   agent any
-  tools { nodejs "node20" }
+  tools { nodejs "node20" }  // <-- Uses the Node 20 tool from Jenkins Tools
 
   environment {
     REGISTRY = "ghcr.io"
@@ -13,7 +13,14 @@ pipeline {
     }
 
     stage("Install") {
-      steps { sh "npm ci" }
+      steps {
+        sh """
+          echo 'Node location: $(which node)'
+          node -v
+          npm -v
+          npm ci
+        """
+      }
     }
 
     stage("Build") {
@@ -37,12 +44,10 @@ pipeline {
       when { branch "main" }
       steps {
         script {
-          // Derive owner/repo from the git remote
           def owner = sh(script: "git config --get remote.origin.url | sed -E 's#(git@|https://)github.com[:/]|.git##g' | cut -d/ -f1 | tr '[:upper:]' '[:lower:]'", returnStdout: true).trim()
-          def repo  = sh(script: "git config --get remote.origin.url | sed -E 's#.*/([^/]+)(\\.git)?#\\1#' | tr '[:upper:]' '[:lower:]'", returnStdout: true).trim()
+          def repo  = sh(script: "git config --get remote.origin.url | sed -E 's#.*/([^/]+)(\\\\.git)?#\\1#' | tr '[:upper:]' '[:lower:]'", returnStdout: true).trim()
           def image = "${REGISTRY}/${owner}/${repo}"
           def sha   = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-
           sh """
             docker build -t ${image}:latest -t ${image}:${sha} .
             docker push ${image}:latest
